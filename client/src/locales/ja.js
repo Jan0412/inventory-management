@@ -293,6 +293,33 @@ export default {
     close: '閉じる'
   },
 
+  // Purchase Order Modal
+  purchaseOrder: {
+    createTitle: '発注書の作成',
+    viewTitle: '発注書',
+    sku: 'SKU',
+    orderId: '注文',
+    shortage: '不足',
+    poNumber: '発注番号',
+    status: 'ステータス',
+    supplier: '仕入先',
+    quantity: '数量',
+    unitCost: '単価',
+    unitCostUsd: '単価 (USD)',
+    total: '合計',
+    expectedDelivery: '納品予定日',
+    createdDate: '作成日',
+    notes: '備考',
+    optional: '任意',
+    create: '発注書を作成',
+    creating: '作成中...',
+    notFound: 'この品目の発注書は見つかりません。',
+    loadFailed: '発注書を読み込めませんでした。',
+    alreadyExists: 'この品目の発注書はすでに存在します。',
+    itemNotFound: 'この未出荷品目は存在しません。',
+    createFailed: '発注書を作成できませんでした。もう一度お試しください。'
+  },
+
   // Tasks Modal
   tasks: {
     title: 'マイタスク',

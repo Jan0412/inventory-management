@@ -293,6 +293,33 @@ export default {
     close: 'Close'
   },
 
+  // Purchase Order Modal
+  purchaseOrder: {
+    createTitle: 'Create Purchase Order',
+    viewTitle: 'Purchase Order',
+    sku: 'SKU',
+    orderId: 'Order',
+    shortage: 'Shortage',
+    poNumber: 'PO Number',
+    status: 'Status',
+    supplier: 'Supplier',
+    quantity: 'Quantity',
+    unitCost: 'Unit Cost',
+    unitCostUsd: 'Unit Cost (USD)',
+    total: 'Total',
+    expectedDelivery: 'Expected Delivery',
+    createdDate: 'Created',
+    notes: 'Notes',
+    optional: 'optional',
+    create: 'Create PO',
+    creating: 'Creating...',
+    notFound: 'No purchase order found for this item.',
+    loadFailed: 'Failed to load the purchase order.',
+    alreadyExists: 'A purchase order already exists for this item.',
+    itemNotFound: 'This backlog item no longer exists.',
+    createFailed: 'Failed to create the purchase order. Please try again.'
+  },
+
   // Tasks Modal
   tasks: {
     title: 'My Tasks',

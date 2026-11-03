@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import date
 from typing import List, Optional
 from pydantic import BaseModel
 from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders
@@ -120,6 +121,21 @@ class CreatePurchaseOrderRequest(BaseModel):
     expected_delivery_date: str
     notes: Optional[str] = None
 
+# camelCase dueDate matches what TasksModal.vue emits and reads
+class CreateTaskRequest(BaseModel):
+    title: str
+    priority: str = "medium"
+    dueDate: str
+
+class Task(CreateTaskRequest):
+    id: str
+    status: str = "pending"
+
+# In-memory only (resets on restart); API task ids are "task-N" so they can't
+# collide with the integer ids of the mock tasks in client/src/composables/useAuth.js
+tasks: List[dict] = []
+next_task_id = 1
+
 # API endpoints
 @app.get("/")
 def root():
@@ -178,6 +194,64 @@ def get_backlog():
         item_dict["has_purchase_order"] = has_po
         result.append(item_dict)
     return result
+
+@app.get("/api/purchase-orders/{backlog_item_id}", response_model=PurchaseOrder)
+def get_purchase_order_by_backlog_item(backlog_item_id: str):
+    """Get the purchase order for a backlog item"""
+    po = next((po for po in purchase_orders if po["backlog_item_id"] == backlog_item_id), None)
+    if not po:
+        raise HTTPException(status_code=404, detail=f"No purchase order for backlog item {backlog_item_id}")
+    return po
+
+@app.post("/api/purchase-orders", response_model=PurchaseOrder, status_code=201)
+def create_purchase_order(request: CreatePurchaseOrderRequest):
+    """Create a purchase order for a backlog item"""
+    if not any(item["id"] == request.backlog_item_id for item in backlog_items):
+        raise HTTPException(status_code=404, detail=f"Backlog item {request.backlog_item_id} not found")
+    # get_backlog's has_purchase_order flag assumes at most one PO per backlog item
+    if any(po["backlog_item_id"] == request.backlog_item_id for po in purchase_orders):
+        raise HTTPException(status_code=400, detail="Backlog item already has a purchase order")
+    po = {
+        **request.model_dump(),
+        "id": f"PO-{len(purchase_orders) + 1:04d}",
+        "status": "Pending",
+        "created_date": date.today().isoformat(),
+    }
+    purchase_orders.append(po)
+    return po
+
+@app.get("/api/tasks", response_model=List[Task])
+def get_tasks():
+    """Get tasks created through the API"""
+    return tasks
+
+@app.post("/api/tasks", response_model=Task, status_code=201)
+def create_task(request: CreateTaskRequest):
+    """Create a task"""
+    # Ids come from a counter, not len(tasks), so they stay unique after deletes
+    global next_task_id
+    task = {**request.model_dump(), "id": f"task-{next_task_id}", "status": "pending"}
+    next_task_id += 1
+    tasks.append(task)
+    return task
+
+@app.patch("/api/tasks/{task_id}", response_model=Task)
+def toggle_task(task_id: str):
+    """Toggle a task between pending and completed"""
+    task = next((t for t in tasks if t["id"] == task_id), None)
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    task["status"] = "pending" if task["status"] == "completed" else "completed"
+    return task
+
+@app.delete("/api/tasks/{task_id}")
+def delete_task(task_id: str):
+    """Delete a task"""
+    task = next((t for t in tasks if t["id"] == task_id), None)
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    tasks.remove(task)
+    return {"message": f"Task {task_id} deleted"}
 
 @app.get("/api/dashboard/summary")
 def get_dashboard_summary(
